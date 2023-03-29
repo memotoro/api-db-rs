@@ -1,0 +1,17 @@
+[package]
+name = "api-db-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.70"
+async-trait = "0.1.68"
+axum = "0.6.12"
+dotenv = "0.15.0"
+envy = "0.4.2"
+serde = { version = "1.0.158", features = ["derive"] }
+thiserror = "1.0.40"
+tokio = { version = "1.26.0", features = ["full"] }
+tokio-postgres = "0.7.7"
