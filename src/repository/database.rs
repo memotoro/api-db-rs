@@ -1,9 +1,10 @@
 use crate::api::repo::Repository;
-use crate::config::postgres::Config;
+use crate::config::database::Config;
 use crate::model::{domain::Record, error::AppError};
 use anyhow::Result;
 use async_trait::async_trait;
 use tokio_postgres::{Client, NoTls, Row};
+use tracing::error;
 
 pub struct Postgres {
     client: Client,
@@ -14,7 +15,10 @@ impl Postgres {
         let (client, connection) = tokio_postgres::connect(config.url().as_str(), NoTls)
             .await
             .map_err(|e| {
-                AppError::DatabaseError(format!("error creating client and connection {}", e))
+                error!("{}", e);
+                AppError::DatabaseError(
+                    "error creating client and connection for repository".to_string(),
+                )
             })?;
 
         tokio::spawn(async move {
@@ -34,7 +38,10 @@ impl Repository for Postgres {
             .client
             .query("SELECT id, name FROM records", &[])
             .await
-            .map_err(|e| AppError::DatabaseError(format!("error reading all records {}", e)))?;
+            .map_err(|e| {
+                error!("{}", e);
+                AppError::DatabaseError("error reading records".to_string())
+            })?;
 
         let records = row_to_record(rows)?;
 
@@ -46,7 +53,10 @@ impl Repository for Postgres {
             .client
             .query("SELECT id, name FROM records WHERE id = $1", &[&id])
             .await
-            .map_err(|e| AppError::DatabaseError(format!("error reading record by id {}", e)))?;
+            .map_err(|e| {
+                error!("{}", e);
+                AppError::DatabaseError(format!("error reading records by id {}", id))
+            })?;
 
         let records = row_to_record(rows)?;
 
@@ -57,7 +67,7 @@ impl Repository for Postgres {
         let record = records
             .get(0)
             .ok_or::<AppError>(AppError::ApplicationError(
-                "error reading record".to_string(),
+                "error reading record from result".to_string(),
             ))?;
 
         Ok(record.clone())
@@ -69,7 +79,8 @@ impl Repository for Postgres {
             .query("SELECT id, name FROM records WHERE name = $1", &[&name])
             .await
             .map_err(|e| {
-                AppError::DatabaseError(format!("error reading all record by name {}", e))
+                error!("{}", e);
+                AppError::DatabaseError(format!("error reading all record by name {}", name))
             })?;
 
         let records = row_to_record(rows)?;
@@ -81,7 +92,7 @@ impl Repository for Postgres {
         let record = records
             .get(0)
             .ok_or::<AppError>(AppError::ApplicationError(
-                "error reading record".to_string(),
+                "error reading record from result".to_string(),
             ))?;
 
         Ok(record.clone())
@@ -92,7 +103,10 @@ impl Repository for Postgres {
             .client
             .execute("INSERT INTO records (name) VALUES ($1)", &[&record.name])
             .await
-            .map_err(|e| AppError::DatabaseError(format!("error saving record {}", e)))?;
+            .map_err(|e| {
+                error!("{}", e);
+                AppError::DatabaseError("error saving record in repository".to_string())
+            })?;
 
         if results != 1 {
             return Err(AppError::ApplicationError(format!(
@@ -111,7 +125,10 @@ impl Repository for Postgres {
                 &[&record.name, &record.id],
             )
             .await
-            .map_err(|e| AppError::DatabaseError(format!("error updating record {}", e)))?;
+            .map_err(|e| {
+                error!("{}", e);
+                AppError::DatabaseError("error updating record".to_string())
+            })?;
 
         Ok(())
     }
@@ -120,7 +137,10 @@ impl Repository for Postgres {
         self.client
             .execute("DELETE FROM records WHERE id = $1", &[&id])
             .await
-            .map_err(|e| AppError::DatabaseError(format!("error deleting record {}", e)))?;
+            .map_err(|e| {
+                error!("{}", e);
+                AppError::DatabaseError("error deleting record".to_string())
+            })?;
 
         Ok(())
     }
@@ -130,12 +150,15 @@ fn row_to_record(rows: Vec<Row>) -> Result<Vec<Record>, AppError> {
     let mut records: Vec<Record> = Vec::new();
 
     for row in rows.iter() {
-        let id = row
-            .try_get("id")
-            .map_err(|e| AppError::DatabaseError(format!("error reading attribute id {}", e)))?;
-        let name = row
-            .try_get("name")
-            .map_err(|e| AppError::DatabaseError(format!("error reading attribute name {}", e)))?;
+        let id = row.try_get("id").map_err(|e| {
+            error!("{}", e);
+            AppError::DatabaseError("error reading attribute id".to_string())
+        })?;
+
+        let name = row.try_get("name").map_err(|e| {
+            error!("{}", e);
+            AppError::DatabaseError("error reading attribute name".to_string())
+        })?;
 
         let record = Record { id, name };
 

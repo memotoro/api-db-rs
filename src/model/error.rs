@@ -7,11 +7,13 @@ use serde::Serialize;
 
 #[derive(thiserror::Error, Debug, Clone)]
 pub enum AppError {
-    #[error("record not found `{0}`")]
+    #[error("record not found {0}")]
     RecordNotFound(String),
-    #[error("error with database `{0}`")]
+    #[error("record already exist {0}")]
+    RecordFound(String),
+    #[error("error with repository {0}")]
     DatabaseError(String),
-    #[error("error with application `{0}`")]
+    #[error("error with application {0}")]
     ApplicationError(String),
 }
 
@@ -24,7 +26,7 @@ pub struct ErrorResponse {
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ErrorCode {
-    RecordNotFound,
+    DataError,
     RepositoryError,
     ApplicationError,
 }
@@ -32,7 +34,8 @@ pub enum ErrorCode {
 impl From<AppError> for ErrorCode {
     fn from(error: AppError) -> ErrorCode {
         match error {
-            AppError::RecordNotFound(_) => ErrorCode::RecordNotFound,
+            AppError::RecordNotFound(_) => ErrorCode::DataError,
+            AppError::RecordFound(_) => ErrorCode::DataError,
             AppError::DatabaseError(_) => ErrorCode::RepositoryError,
             AppError::ApplicationError(_) => ErrorCode::ApplicationError,
         }
@@ -50,6 +53,15 @@ impl IntoResponse for AppError {
                 }),
             )
                 .into_response(),
+            AppError::RecordFound(_) => (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    code: self.clone().into(),
+                    message: self.to_string(),
+                }),
+            )
+                .into_response(),
+
             AppError::DatabaseError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse {

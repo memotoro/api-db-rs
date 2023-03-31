@@ -1,9 +1,11 @@
-use api_db_rs::config::postgres::Config;
-use api_db_rs::handler::processor::{request_processor, response_processor};
+use api_db_rs::config::database::Config;
+use api_db_rs::handler::processor::{
+    failure_processor, request_processor, response_processor, span_processor,
+};
 use api_db_rs::handler::server::{
     all_records, create_record, delete_record, record_by_id, update_record,
 };
-use api_db_rs::repository::postgres::Postgres;
+use api_db_rs::repository::database::Postgres;
 use axum::{routing::get, Router};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -30,8 +32,10 @@ async fn main() {
         .with_state(repo)
         .layer(
             TraceLayer::new_for_http()
+                .make_span_with(span_processor)
                 .on_request(request_processor)
-                .on_response(response_processor),
+                .on_response(response_processor)
+                .on_failure(failure_processor),
         );
 
     let port = 8080;

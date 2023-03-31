@@ -32,10 +32,22 @@ pub async fn create_record(
     State(repo): State<Arc<dyn Repository>>,
     Json(request): Json<RecordRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let mut record = Record {
-        id: 0,
-        name: request.name,
+    let name = request.name;
+
+    match repo.read_record_by_name(name.clone()).await {
+        Ok(r) => {
+            return Err(AppError::RecordFound(format!(
+                "record with name {} already exist",
+                r.name
+            )))
+        }
+        Err(e) => match e {
+            AppError::RecordNotFound(_) => {}
+            _ => return Err(e),
+        },
     };
+
+    let mut record = Record { id: 0, name };
 
     repo.save_record(&record).await?;
 
@@ -69,13 +81,13 @@ pub async fn delete_record(
     Ok(StatusCode::OK)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct RecordParams {
     id: i32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct RecordRequest {
     name: String,
 }

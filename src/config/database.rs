@@ -1,6 +1,7 @@
 use crate::model::error::AppError;
 use anyhow::Result;
 use serde::Deserialize;
+use tracing::error;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -13,8 +14,10 @@ pub struct Config {
 
 impl Config {
     pub fn new_from_env() -> Result<Self> {
-        envy::from_env()
-            .map_err(|e| AppError::ApplicationError(format!("error reading config {:?}", e)).into())
+        envy::from_env().map_err(|e| {
+            error!("{}", e);
+            AppError::ApplicationError("error reading config".to_string()).into()
+        })
     }
 
     pub fn url(&self) -> String {
