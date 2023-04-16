@@ -4,7 +4,7 @@ use serde::Deserialize;
 use tracing::error;
 
 #[derive(Deserialize, Debug)]
-pub struct Config {
+pub struct DbConfig {
     pub db_host: String,
     pub db_port: u32,
     pub db_name: String,
@@ -12,7 +12,7 @@ pub struct Config {
     pub db_password: String,
 }
 
-impl Config {
+impl DbConfig {
     pub fn new_from_env() -> Result<Self> {
         envy::from_env().map_err(|e| {
             error!("{}", e);

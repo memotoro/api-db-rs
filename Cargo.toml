@@ -12,6 +12,7 @@ axum = "0.6.12"
 dotenv = "0.15.0"
 envy = "0.4.2"
 hyper = "0.14.25"
+prometheus = { version = "0.13.3", features = ["process"] }
 serde = { version = "1.0.158", features = ["derive"] }
 thiserror = "1.0.40"
 tokio = { version = "1.26.0", features = ["full"] }

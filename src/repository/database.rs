@@ -1,5 +1,5 @@
 use crate::api::repo::Repository;
-use crate::config::database::Config;
+use crate::config::database::DbConfig;
 use crate::model::{domain::Record, error::AppError};
 use anyhow::Result;
 use async_trait::async_trait;
@@ -11,7 +11,7 @@ pub struct Postgres {
 }
 
 impl Postgres {
-    pub async fn new(config: &Config) -> Result<Self, AppError> {
+    pub async fn new(config: &DbConfig) -> Result<Self, AppError> {
         let (client, connection) = tokio_postgres::connect(config.url().as_str(), NoTls)
             .await
             .map_err(|e| {

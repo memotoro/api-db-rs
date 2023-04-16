@@ -1,4 +1,6 @@
-use api_db_rs::config::database::Config;
+use api_db_rs::config::api::ApiConfig;
+use api_db_rs::config::database::DbConfig;
+use api_db_rs::handler::metrics::process_metrics;
 use api_db_rs::handler::processor::{
     failure_processor, request_processor, response_processor, span_processor,
 };
@@ -17,13 +19,16 @@ async fn main() {
 
     tracing_subscriber::fmt::init();
 
-    let db_config = Config::new_from_env().unwrap();
+    let api_config = ApiConfig::new_from_env().unwrap();
+
+    let db_config = DbConfig::new_from_env().unwrap();
 
     let pg = Postgres::new(&db_config).await.unwrap();
 
     let repo = Arc::new(pg);
 
     let app = Router::new()
+        .route("/metrics", get(process_metrics))
         .route("/records", get(all_records).post(create_record))
         .route(
             "/records/:id",
@@ -38,9 +43,7 @@ async fn main() {
                 .on_failure(failure_processor),
         );
 
-    let port = 8080;
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    let addr = SocketAddr::from(([0, 0, 0, 0], api_config.port));
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
