@@ -65,7 +65,7 @@ impl Repository for Postgres {
         }
 
         let record = records
-            .get(0)
+            .first()
             .ok_or::<AppError>(AppError::ApplicationError(
                 "error reading record from result".to_string(),
             ))?;
@@ -90,7 +90,7 @@ impl Repository for Postgres {
         }
 
         let record = records
-            .get(0)
+            .first()
             .ok_or::<AppError>(AppError::ApplicationError(
                 "error reading record from result".to_string(),
             ))?;

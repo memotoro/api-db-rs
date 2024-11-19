@@ -1,3 +1,4 @@
+use crate::handler::metrics::request_counter;
 use axum::{body::BoxBody, http::Request, response::Response};
 use std::time::Duration;
 use tower_http::classify::ServerErrorsFailureClass;
@@ -13,6 +14,7 @@ pub fn span_processor(request: &Request<hyper::Body>) -> Span {
 
 pub fn request_processor(_request: &Request<hyper::Body>, _span: &Span) {
     info!("incoming request");
+    request_counter();
 }
 
 pub fn response_processor(response: &Response<BoxBody>, latency: Duration, _span: &Span) {

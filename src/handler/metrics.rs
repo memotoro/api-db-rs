@@ -1,7 +1,13 @@
 use crate::model::error::AppError;
 use axum::{http::StatusCode, response::IntoResponse};
-use prometheus::{Encoder, TextEncoder};
+use lazy_static::lazy_static;
+use prometheus::{register_int_counter, Encoder, IntCounter, TextEncoder};
 use tracing::error;
+
+lazy_static! {
+    static ref REQUEST_COUNTER: IntCounter =
+        register_int_counter!("request_counter", "Number of request").unwrap();
+}
 
 pub async fn process_metrics() -> Result<impl IntoResponse, AppError> {
     let encoder = TextEncoder::new();
@@ -23,4 +29,8 @@ pub async fn process_metrics() -> Result<impl IntoResponse, AppError> {
     buffer.clear();
 
     Ok((StatusCode::OK, response))
+}
+
+pub fn request_counter() {
+    REQUEST_COUNTER.inc();
 }

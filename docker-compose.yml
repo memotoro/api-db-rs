@@ -1,6 +1,5 @@
-version: '3'
-
 services:
+
   api:
     image: memotoro/api-db-rs
     ports:
